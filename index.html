@@ -1,1 +1,18 @@
+-- Run in Supabase: SQL Editor > New query
+create table if not exists public.readings (
+  id bigint generated always as identity primary key,
+  series text not null check (char_length(series) between 1 and 40),
+  value numeric not null check (value between -1000000000 and 1000000000),
+  created_at timestamptz not null default now()
+);
 
+create index if not exists readings_series_time on public.readings (series, created_at desc);
+
+alter table public.readings enable row level security;
+
+-- Anyone can read and add readings. No updates or deletes from the browser.
+create policy "public read" on public.readings for select using (true);
+create policy "public insert" on public.readings for insert with check (true);
+
+-- Turn on realtime for this table
+alter publication supabase_realtime add table public.readings;
